@@ -1,0 +1,59 @@
+angular.module('selectize', [])
+
+    .directive('selectize', function ($timeout, $parse, localize) {
+        return {
+            restrict: 'A',
+            link: function (scope, element, attrs) {
+
+
+                var loadDataCallbackFn = $parse(attrs.selectizeLoadData);
+                var createFn = $parse(attrs.selectizeCreate);
+                var selectedFn = $parse(attrs.selectizeOnSelect);
+
+                scope.createNew = function (name, callback) {
+                    createFn(scope, {name: name, callback: callback})
+                };
+
+                scope.loadMore = function (query, callback) {
+                    loadDataCallbackFn(scope, {query: query, callback: callback});
+                };
+
+                scope.onChange = function (id) {
+                    selectedFn(scope, {id: id})
+                };
+
+                var addNewLabel = function (data, escape) {
+                    return '<div class="create">' + localize.get('add.new') + ' <strong>' + escape(data.input) + '</strong>&hellip;</div>';
+                }
+
+                var options = {
+                    valueField: 'id',
+                    labelField: 'name',
+                    searchField: 'name',
+                    create: scope.createNew,
+                    persist: true,
+                    load: scope.loadMore,
+                    onChange: scope.onChange,
+                    render: {
+                        option_create: addNewLabel
+                    }
+                };
+
+                var opts = angular.extend(options, scope.$eval(attrs.selectize));
+                $timeout(function () {
+                    scope.selectize = $(element).selectize(opts)[0].selectize;
+                    scope.selectizeInitialData = scope.$eval(attrs.selectizeInitialData);
+
+                });
+
+                scope.$watch('selectizeInitialData', function () {
+                    if (angular.isDefined(scope.selectize)) {
+                        scope.selectize.addOption(scope.selectizeInitialData);
+                    }
+                });
+
+
+            }
+        };
+    });
+;
